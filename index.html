@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Smart Inventory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  </head>
+  <body class="bg-gray-100 flex">
+    <aside class="w-64 bg-blue-900 h-screen sticky top-0 text-white p-6 shadow-xl">
+      <h1 class="text-2xl font-bold mb-10 flex items-center"><i class="fas fa-boxes-stacked mr-3 text-yellow-400"></i> WMS Pro</h1>
+      <nav class="space-y-4">
+        <a href="index.html" class="block bg-blue-800 p-3 rounded-lg border-l-4 border-yellow-400 font-semibold"> <i class="fas fa-chart-line mr-2"></i> Dashboard </a>
+        <a href="inventory.html" class="block p-3 hover:bg-blue-800 rounded-lg transition"> <i class="fas fa-box-open mr-2"></i> Inventaris </a>
+        <a href="opname.html" class="block p-3 hover:bg-blue-800 rounded-lg transition"> <i class="fas fa-clipboard-check mr-2"></i> Stock Opname </a>
+        <a href="reports.html" class="block p-3 hover:bg-blue-800 rounded-lg transition"> <i class="fas fa-file-contract mr-2"></i> Laporan </a>
+      </nav>
+    </aside>
+
+    <main class="flex-1 p-8">
+      <header class="flex justify-between items-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">Ringkasan Gudang</h2>
+        <div class="flex items-center space-x-4">
+          <span id="date-display" class="text-gray-500 font-medium"></span>
+          <div class="bg-white p-2 rounded-full shadow-sm px-4">
+            <span class="text-blue-900 font-bold">Admin Carlos</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-blue-500">
+          <div class="text-blue-500 mb-2"><i class="fas fa-box fa-2x"></i></div>
+          <p class="text-sm text-gray-500 uppercase tracking-wider">Total Produk</p>
+          <h3 id="dash-total-items" class="text-3xl font-bold">0</h3>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-green-500">
+          <div class="text-green-500 mb-2"><i class="fas fa-cubes fa-2x"></i></div>
+          <p class="text-sm text-gray-500 uppercase tracking-wider">Total Stok Fisik</p>
+          <h3 id="dash-total-stock" class="text-3xl font-bold">0</h3>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-red-500">
+          <div class="text-red-500 mb-2"><i class="fas fa-exclamation-triangle fa-2x"></i></div>
+          <p class="text-sm text-gray-500 uppercase tracking-wider">Stok Kritis (< 5)</p>
+          <h3 id="dash-low-stock" class="text-3xl font-bold text-red-600">0</h3>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-yellow-500">
+          <div class="text-yellow-500 mb-2"><i class="fas fa-history fa-2x"></i></div>
+          <p class="text-sm text-gray-500 uppercase tracking-wider">Transaksi Hari Ini</p>
+          <h3 class="text-3xl font-bold">12</h3>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h4 class="font-bold text-gray-700">Aktivitas Terakhir</h4>
+          <a href="inventory.html" class="text-blue-600 hover:underline text-sm">Lihat Semua</a>
+        </div>
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="p-4 text-gray-600 font-semibold border-b">Nama Barang</th>
+              <th class="p-4 text-gray-600 font-semibold border-b text-center">Stok Sistem</th>
+              <th class="p-4 text-gray-600 font-semibold border-b text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody id="dash-recent-list"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <script>
+      // Simulasi Database (Ambil dari LocalStorage)
+      const inventory = JSON.parse(localStorage.getItem("inventory")) || [
+        { id: 1, name: "MacBook Air M2", stock: 12 },
+        { id: 2, name: "Mouse Logitech", stock: 2 },
+        { id: 3, name: "Keyboard Mechanical", stock: 15 },
+        { id: 4, name: 'Monitor LG 24"', stock: 4 },
+      ];
+
+      // Tampilkan Tanggal Hari Ini
+      document.getElementById("date-display").innerText = new Date().toLocaleDateString("id-ID", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      function loadDashboard() {
+        let totalStock = 0;
+        let lowStockCount = 0;
+        const recentList = document.getElementById("dash-recent-list");
+        recentList.innerHTML = "";
+
+        inventory.forEach((item) => {
+          totalStock += item.stock;
+          if (item.stock < 5) lowStockCount++;
+
+          // Isi tabel aktivitas (Hanya tampilkan beberapa)
+          recentList.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-4 border-b text-gray-700 font-medium">${item.name}</td>
+                        <td class="p-4 border-b text-center font-bold text-blue-800">${item.stock}</td>
+                        <td class="p-4 border-b text-right">
+                            <span class="${item.stock < 5 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"} px-3 py-1 rounded-full text-xs font-bold uppercase">
+                                ${item.stock < 5 ? "Restock Segera" : "Stok Aman"}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+        });
+
+        // Update Counter
+        document.getElementById("dash-total-items").innerText = inventory.length;
+        document.getElementById("dash-total-stock").innerText = totalStock;
+        document.getElementById("dash-low-stock").innerText = lowStockCount;
+
+        // Simpan data default jika pertama kali buka
+        if (!localStorage.getItem("inventory")) {
+          localStorage.setItem("inventory", JSON.stringify(inventory));
+        }
+      }
+
+      window.onload = loadDashboard;
+    </script>
+  </body>
+</html>

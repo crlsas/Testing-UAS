@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laporan - Smart Inventory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  </head>
+  <body class="bg-gray-100 flex">
+    <aside class="w-64 bg-blue-900 min-h-screen text-white p-6 shadow-xl">
+      <h1 class="text-2xl font-bold mb-10 flex items-center"><i class="fas fa-boxes-stacked mr-3 text-yellow-400"></i> WMS Pro</h1>
+      <nav class="space-y-4 text-sm">
+        <a href="index.html" class="block p-3 hover:bg-blue-800 rounded-lg transition"><i class="fas fa-chart-line mr-2"></i> Dashboard</a>
+        <a href="inventory.html" class="block p-3 hover:bg-blue-800 rounded-lg transition"><i class="fas fa-box-open mr-2"></i> Inventaris</a>
+        <a href="opname.html" class="block p-3 hover:bg-blue-800 rounded-lg transition"><i class="fas fa-clipboard-check mr-2"></i> Stock Opname</a>
+        <a href="reports.html" class="block bg-blue-800 p-3 rounded-lg border-l-4 border-yellow-400 font-semibold"><i class="fas fa-file-contract mr-2"></i> Laporan</a>
+      </nav>
+    </aside>
+
+    <main class="flex-1 p-8">
+      <header class="mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">Pusat Laporan</h2>
+        <p class="text-gray-500">Ekspor data inventaris ke format dokumen resmi.</p>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+          <div class="flex items-center mb-6">
+            <div class="bg-red-100 p-4 rounded-full text-red-600 mr-4">
+              <i class="fas fa-file-pdf fa-2x"></i>
+            </div>
+            <div>
+              <h4 class="text-xl font-bold text-gray-800">Laporan Stok Saat Ini</h4>
+              <p class="text-sm text-gray-500">Menghasilkan dokumen PDF berisi seluruh daftar barang dan stok terakhir.</p>
+            </div>
+          </div>
+          <button onclick="generatePDF()" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition shadow-lg"><i class="fas fa-download mr-2"></i> Unduh PDF</button>
+        </div>
+
+        <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+          <div class="flex items-center mb-6">
+            <div class="bg-green-100 p-4 rounded-full text-green-600 mr-4">
+              <i class="fas fa-file-excel fa-2x"></i>
+            </div>
+            <div>
+              <h4 class="text-xl font-bold text-gray-800">Laporan Excel (CSV)</h4>
+              <p class="text-sm text-gray-500">Ekspor data ke format tabel yang bisa dibuka di Microsoft Excel.</p>
+            </div>
+          </div>
+          <button onclick="generateCSV()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-lg"><i class="fas fa-file-csv mr-2"></i> Unduh CSV</button>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const inventory = JSON.parse(localStorage.getItem("inventory")) || [];
+
+      function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Header Laporan
+        doc.setFontSize(18);
+        doc.text("LAPORAN STOK INVENTARIS", 14, 20);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Tanggal Cetak: ${new Date().toLocaleString("id-ID")}`, 14, 30);
+        doc.text(`Dicetak Oleh: Admin Carlos`, 14, 35);
+
+        // Membuat Tabel di PDF
+        const tableData = inventory.map((item) => [item.id, item.name, item.category, item.stock, item.stock < 5 ? "Kritis" : "Aman"]);
+
+        doc.autoTable({
+          startY: 45,
+          head: [["ID", "Nama Produk", "Kategori", "Stok", "Status"]],
+          body: tableData,
+          theme: "striped",
+          headStyles: { fillColor: [30, 58, 138] }, // Blue-900
+        });
+
+        doc.save(`Laporan_Stok_${Date.now()}.pdf`);
+      }
+
+      function generateCSV() {
+        let csvContent = "data:text/csv;charset=utf-8,ID,Nama Produk,Kategori,Stok\n";
+        inventory.forEach((item) => {
+          csvContent += `${item.id},${item.name},${item.category},${item.stock}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "laporan_stok.csv");
+        document.body.appendChild(link);
+        link.click();
+      }
+    </script>
+  </body>
+</html>

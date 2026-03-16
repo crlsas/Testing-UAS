@@ -1,0 +1,32 @@
+name: WMS Pro CI - Carlos
+on: [push, pull_request]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: db_gudang
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mysqli, mbstring, xml, zip
+          coverage: xdebug
+
+      - name: Install Dependencies
+        run: composer install
+
+      - name: Run Testing
+        run: vendor/bin/phpunit tests --view-order-status=actual

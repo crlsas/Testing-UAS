@@ -1,0 +1,159 @@
+<?php
+session_start();
+
+// 1. PROTEKSI HALAMAN (Auth Guard)
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit();
+}
+
+include 'config.php'; 
+
+// 2. LOGIKA TAMBAH PRODUK (Create)
+if (isset($_POST['save_product'])) {
+    $name = mysqli_real_escape_string($conn, $_POST['prodName']);
+    $cat  = mysqli_real_escape_string($conn, $_POST['prodCat']);
+    $qty  = $_POST['prodQty'];
+    $rak  = mysqli_real_escape_string($conn, $_POST['prodRak']);
+
+    // Query menyesuaikan dengan struktur tabel db_gudang kamu
+    $query = "INSERT INTO produk (nama_produk, kategori, stok_sistem, lokasi_rak) 
+              VALUES ('$name', '$cat', '$qty', '$rak')";
+    
+    if (mysqli_query($conn, $query)) {
+        header("Location: inventory.php?status=success");
+        exit();
+    } else {
+        echo "Error: " . mysqli_error($conn);
+    }
+}
+
+// 3. LOGIKA HAPUS PRODUK (Delete)
+if (isset($_GET['delete'])) {
+    $id = $_GET['delete'];
+    mysqli_query($conn, "DELETE FROM produk WHERE id_produk = $id");
+    header("Location: inventory.php");
+    exit();
+}
+
+// 4. AMBIL DATA DARI DATABASE (Read)
+$result = mysqli_query($conn, "SELECT * FROM produk ORDER BY id_produk DESC");
+?>
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Inventaris - Smart Inventory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  </head>
+  <body class="bg-gray-100 flex">
+    <aside class="w-64 bg-blue-900 min-h-screen text-white p-6 shadow-xl sticky top-0">
+      <h1 class="text-2xl font-bold mb-10 flex items-center"><i class="fas fa-boxes-stacked mr-3 text-yellow-400"></i> WMS Pro</h1>
+      <nav class="space-y-4 text-sm">
+        <a href="index.php" class="block p-3 hover:bg-blue-800 rounded-lg transition"><i class="fas fa-chart-line mr-2"></i> Dashboard</a>
+        <a href="inventory.php" class="block bg-blue-800 p-3 rounded-lg border-l-4 border-yellow-400 font-semibold"><i class="fas fa-box-open mr-2"></i> Inventaris</a>
+        <a href="opname.php" class="block p-3 hover:bg-blue-800 rounded-lg transition"><i class="fas fa-clipboard-check mr-2"></i> Stock Opname</a>
+        <a href="reports.php" class="block p-3 hover:bg-blue-800 rounded-lg transition"><i class="fas fa-file-contract mr-2"></i> Laporan</a>
+
+        <div class="pt-10">
+          <a href="logout.php" onclick="return confirm('Keluar dari sistem?');" class="block p-3 text-red-400 hover:bg-red-900/30 rounded-lg transition"> <i class="fas fa-sign-out-alt mr-2"></i> Logout </a>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="flex-1 p-8">
+      <header class="flex justify-between items-center mb-8">
+        <div>
+          <h2 class="text-3xl font-bold text-gray-800">Manajemen Stok</h2>
+          <p class="text-sm text-gray-500">
+            Logged in as: <b><?php echo $_SESSION['nama_lengkap'] ?? $_SESSION['username']; ?></b>
+          </p>
+        </div>
+        <button onclick="openModal()" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-md transition"><i class="fas fa-plus mr-2"></i> Tambah Produk Baru</button>
+      </header>
+
+      <?php if(isset($_GET['status']) && $_GET['status'] == 'success'): ?>
+      <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded shadow-sm animate-pulse">Produk berhasil ditambahkan ke database!</div>
+      <?php endif; ?>
+
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+        <table class="w-full text-left">
+          <thead class="bg-gray-50 border-b">
+            <tr>
+              <th class="p-4 font-semibold text-gray-600">ID</th>
+              <th class="p-4 font-semibold text-gray-600">Nama Produk</th>
+              <th class="p-4 font-semibold text-gray-600">Kategori</th>
+              <th class="p-4 font-semibold text-gray-600">Lokasi Rak</th>
+              <th class="p-4 font-semibold text-gray-600 text-center">Stok</th>
+              <th class="p-4 font-semibold text-gray-600 text-right">Opsi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php while($row = mysqli_fetch_assoc($result)): ?>
+            <tr class="border-b hover:bg-gray-50 transition">
+              <td class="p-4 text-gray-400 text-sm font-mono">#<?php echo $row['id_produk']; ?></td>
+              <td class="p-4 font-bold text-gray-700"><?php echo $row['nama_produk']; ?></td>
+              <td class="p-4">
+                <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs"><?php echo $row['kategori']; ?></span>
+              </td>
+              <td class="p-4 text-gray-500"><?php echo $row['lokasi_rak']; ?></td>
+              <td class="p-4 text-center">
+                <span class="text-lg font-bold <?php echo ($row['stok_sistem'] < 5) ? 'text-red-600' : 'text-blue-700'; ?>"> <?php echo $row['stok_sistem']; ?> </span>
+              </td>
+              <td class="p-4 text-right">
+                <a href="inventory.php?delete=<?php echo $row['id_produk']; ?>" onclick="return confirm('Hapus produk ini?');" class="text-gray-300 hover:text-red-500 transition px-2 text-xl">
+                  <i class="fas fa-trash"></i>
+                </a>
+              </td>
+            </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <div id="productModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center backdrop-blur-sm z-50">
+      <form action="inventory.php" method="POST" class="bg-white w-96 rounded-xl shadow-2xl p-6">
+        <h3 class="text-xl font-bold mb-4 text-gray-800">Detail Produk Baru</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Barang</label>
+            <input type="text" name="prodName" required class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategori</label>
+            <select name="prodCat" class="w-full border p-2 rounded-lg">
+              <option value="Elektronik">Elektronik</option>
+              <option value="Alat Kantor">Alat Kantor</option>
+              <option value="Makanan">Makanan</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Stok Awal</label>
+            <input type="number" name="prodQty" required class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Lokasi Rak</label>
+            <input type="text" name="prodRak" placeholder="Contoh: A-01" class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+        <div class="flex justify-end mt-6 space-x-3">
+          <button type="button" onclick="closeModal()" class="text-gray-500 font-semibold px-4 py-2 hover:bg-gray-100 rounded-lg text-sm">Batal</button>
+          <button type="submit" name="save_product" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 text-sm">Simpan Produk</button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      function openModal() {
+        document.getElementById("productModal").classList.remove("hidden");
+      }
+      function closeModal() {
+        document.getElementById("productModal").classList.add("hidden");
+      }
+    </script>
+  </body>
+</html>
