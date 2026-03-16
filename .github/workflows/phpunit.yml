@@ -5,6 +5,12 @@ jobs:
   tests:
     runs-on: ubuntu-latest
 
+    # Menambahkan izin akses secara eksplisit
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+
     services:
       mysql:
         image: mysql:8.0
