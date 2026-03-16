@@ -5,7 +5,6 @@ jobs:
   tests:
     runs-on: ubuntu-latest
 
-    # Menambahkan izin akses secara eksplisit
     permissions:
       contents: read
       packages: read
@@ -35,7 +34,7 @@ jobs:
         run: composer install
 
       - name: Give execute permission to PHPUnit
-        run: chmod +x vendor/bin/phpunit tests
+        run: chmod +x vendor/bin/phpunit
 
       - name: Run Testing
-        run: vendor/bin/phpunit tests --view-order-status=actual
+        run: vendor/bin/phpunit tests
