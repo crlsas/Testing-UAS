@@ -34,5 +34,8 @@ jobs:
       - name: Install Dependencies
         run: composer install
 
+      - name: Give execute permission to PHPUnit
+        run: chmod +x vendor/bin/phpunit
+
       - name: Run Testing
         run: vendor/bin/phpunit tests --view-order-status=actual
