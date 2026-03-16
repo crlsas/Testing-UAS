@@ -33,6 +33,27 @@ jobs:
       - name: Install Dependencies
         run: composer install
 
+      # LANGKAH KRUSIAL: Membuat tabel otomatis di GitHub
+      - name: Setup Database Tables
+        run: |
+          mysql -h 127.0.0.1 -u root db_gudang -e "
+          CREATE TABLE produk (
+            id_produk INT AUTO_INCREMENT PRIMARY KEY,
+            nama_produk VARCHAR(255),
+            kategori VARCHAR(100),
+            stok_sistem INT,
+            stok_minimum INT DEFAULT 5,
+            lokasi_rak VARCHAR(50)
+          );
+          CREATE TABLE penjualan (
+            id_jual INT AUTO_INCREMENT PRIMARY KEY,
+            id_produk INT,
+            jumlah_jual INT,
+            total_harga DECIMAL(10,2)
+          );
+          INSERT INTO produk (id_produk, nama_produk, stok_sistem, stok_minimum) VALUES (1, 'Produk Dummy', 10, 5);
+          "
+
       - name: Give execute permission to PHPUnit
         run: chmod +x vendor/bin/phpunit
 
